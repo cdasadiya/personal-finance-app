@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="A simple, premium personal finance tracker. Manage your income, expense transactions, and visualize your spending breakdown locally in your browser.">
+  <title>ChaitanyaFinance — Simple Personal Wealth Tracker</title>
+  
+  <!-- CSS Stylesheet -->
+  <link rel="stylesheet" href="index.css">
+  
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+  <div class="app-container">
+    
+    <!-- HEADER -->
+    <header>
+      <div class="brand-section">
+        <div class="logo-icon">
+          <i data-lucide="wallet"></i>
+        </div>
+        <h1>ChaitanyaFinance</h1>
+      </div>
+      <div class="header-controls">
+        <button class="btn-secondary-outline" id="exportBtn" title="Export data to JSON">
+          <i data-lucide="download"></i>
+          <span>Export</span>
+        </button>
+        <button class="btn-secondary-outline" id="importBtn" title="Import data from JSON">
+          <i data-lucide="upload"></i>
+          <span>Import</span>
+        </button>
+        <button class="icon-btn" id="themeToggleBtn" title="Toggle Light/Dark Mode">
+          <i data-lucide="sun" id="themeSunIcon" style="display: none;"></i>
+          <i data-lucide="moon" id="themeMoonIcon"></i>
+        </button>
+        <button class="icon-btn" id="clearAllBtn" title="Clear all local data" style="border-color: rgba(244, 63, 94, 0.2);">
+          <i data-lucide="trash-2" style="color: var(--expense);"></i>
+        </button>
+      </div>
+    </header>
+    
+    <!-- SUMMARY CARDS -->
+    <section class="summary-grid">
+      
+      <!-- Card: Net Balance -->
+      <div class="glass-panel summary-card card-net-balance positive" id="cardBalance">
+        <div class="card-header">
+          <span class="card-title">Net Balance</span>
+          <div class="card-icon-wrapper">
+            <i data-lucide="scale"></i>
+          </div>
+        </div>
+        <div class="card-value" id="valBalance">$0.00</div>
+        <div class="card-subtitle" id="subBalance">Keep track of your total margin</div>
+      </div>
+      
+      <!-- Card: Income -->
+      <div class="glass-panel summary-card card-income">
+        <div class="card-header">
+          <span class="card-title">Total Income</span>
+          <div class="card-icon-wrapper">
+            <i data-lucide="arrow-up-right"></i>
+          </div>
+        </div>
+        <div class="card-value" id="valIncome">$0.00</div>
+        <div class="card-subtitle">From all earnings sources</div>
+      </div>
+      
+      <!-- Card: Expense -->
+      <div class="glass-panel summary-card card-expense">
+        <div class="card-header">
+          <span class="card-title">Total Expenses</span>
+          <div class="card-icon-wrapper">
+            <i data-lucide="arrow-down-left"></i>
+          </div>
+        </div>
+        <div class="card-value" id="valExpense">$0.00</div>
+        <div class="card-subtitle" id="subExpense">All outgoings combined</div>
+      </div>
+      
+    </section>
+
+    <!-- MAIN APP GRID -->
+    <main class="main-grid">
+      
+      <!-- Left Column: Add Transaction & Category Breakdown -->
+      <div class="column">
+        
+        <!-- Transaction Form -->
+        <section class="glass-panel">
+          <h2 class="panel-title"><i data-lucide="plus-circle" style="color: var(--primary);"></i> Add Transaction</h2>
+          <form id="transactionForm" novalidate>
+            
+            <div class="form-group">
+              <label class="form-label">Transaction Type</label>
+              <div class="type-selector-group">
+                <input type="radio" id="typeExpense" name="txType" value="expense" checked class="type-radio">
+                <label for="typeExpense" class="type-label expense-label">
+                  <i data-lucide="trending-down" style="width: 16px;"></i> Expense
+                </label>
+                
+                <input type="radio" id="typeIncome" name="txType" value="income" class="type-radio">
+                <label for="typeIncome" class="type-label income-label">
+                  <i data-lucide="trending-up" style="width: 16px;"></i> Income
+                </label>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="txDesc" class="form-label">Description</label>
+              <div class="input-container">
+                <i data-lucide="tag" class="input-icon"></i>
+                <input type="text" id="txDesc" class="form-control" placeholder="e.g. Weekly Groceries" required>
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <label for="txAmount" class="form-label">Amount ($)</label>
+              <div class="input-container">
+                <i data-lucide="dollar-sign" class="input-icon"></i>
+                <input type="number" id="txAmount" class="form-control" placeholder="0.00" step="0.01" min="0.01" required>
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <label for="txCategory" class="form-label">Category</label>
+              <div class="input-container">
+                <i data-lucide="layers" class="input-icon"></i>
+                <select id="txCategory" class="form-control select-control" required>
+                  <!-- Categories will be filled dynamically by JS -->
+                </select>
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <label for="txDate" class="form-label">Date</label>
+              <div class="input-container">
+                <i data-lucide="calendar" class="input-icon"></i>
+                <input type="date" id="txDate" class="form-control" required>
+              </div>
+            </div>
+            
+            <button type="submit" class="btn-primary">
+              <i data-lucide="plus"></i> Add Transaction
+            </button>
+            
+          </form>
+        </section>
+
+        <!-- Visual Analytics Chart -->
+        <section class="glass-panel">
+          <h2 class="panel-title"><i data-lucide="pie-chart" style="color: var(--primary);"></i> Expense Breakdown</h2>
+          <div class="chart-container">
+            <canvas id="expenseChart" style="max-height: 220px; display: none;"></canvas>
+            <div id="chartEmptyState" class="empty-state">
+              <div class="empty-state-icon"><i data-lucide="bar-chart-3"></i></div>
+              <p>Add some expense transactions to view the breakdown</p>
+            </div>
+          </div>
+        </section>
+
+      </div>
+      
+      <!-- Right Column: Filters and Transactions List -->
+      <div class="column">
+        
+        <!-- Transaction List Section -->
+        <section class="glass-panel">
+          <h2 class="panel-title"><i data-lucide="list" style="color: var(--primary);"></i> History</h2>
+          
+          <!-- Search & Filter Controls -->
+          <div class="filters-bar">
+            
+            <div class="search-wrapper input-container">
+              <i data-lucide="search" class="input-icon"></i>
+              <input type="text" id="searchFilter" class="form-control" placeholder="Search description...">
+            </div>
+            
+            <select id="categoryFilter" class="form-control select-control filter-select">
+              <option value="all">All Categories</option>
+              <!-- Will be loaded dynamically -->
+            </select>
+            
+            <select id="typeFilter" class="form-control select-control filter-select">
+              <option value="all">All Types</option>
+              <option value="income">Income Only</option>
+              <option value="expense">Expense Only</option>
+            </select>
+            
+          </div>
+          
+          <!-- History Scroll Area -->
+          <div class="transaction-list-wrapper" id="transactionList">
+            <!-- Dynamic entries loaded here -->
+          </div>
+          
+        </section>
+        
+      </div>
+      
+    </main>
+    
+  </div>
+
+  <!-- CUSTOM ALERTS & DIALOGS -->
+  
+  <!-- Clear All Confirmation Modal -->
+  <div class="modal-overlay" id="clearModalOverlay">
+    <div class="modal-box">
+      <div class="modal-icon"><i data-lucide="alert-triangle"></i></div>
+      <h3 class="modal-title">Clear Data?</h3>
+      <p class="modal-desc">Are you sure you want to delete all transaction history? This action is permanent and cannot be undone.</p>
+      <div class="modal-actions">
+        <button class="modal-btn modal-btn-cancel" id="cancelClearBtn">Cancel</button>
+        <button class="modal-btn modal-btn-confirm" id="confirmClearBtn">Clear All</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- File Import Input (Hidden) -->
+  <input type="file" id="importFileInput" accept=".json" style="display: none;">
+
+  <!-- JavaScript Code -->
+  <script src="app.js"></script>
+
+</body>
+</html>
